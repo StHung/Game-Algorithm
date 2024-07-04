@@ -1,4 +1,10 @@
 ﻿using ConsoleApp1;
+using System.Text.Json;
+
+string ConvertToStringJson(List<Stack<BallColor>> stacks)
+{
+    return JsonSerializer.Serialize(stacks);
+}
 
 bool IsStackSolved(Stack<BallColor> stack, int stackHeight) => stack.Count == stackHeight && stack.Distinct<BallColor>().Count() == 1;
 
@@ -26,27 +32,25 @@ void MoveBall(Stack<BallColor> source, Stack<BallColor> destiation )
 
 void PrintStacks(List<Stack<BallColor>> stacks, int stackHeight, int colorCount)
 {
-    Console.ForegroundColor = IsLevelPassed(stacks, stackHeight, colorCount) ? ConsoleColor.Green : ConsoleColor.Red;
     Console.WriteLine("----------------------------------------");
     for (int i = 0; i < stacks.Count; i++)
     {
         var stackInx = i + 1;
         var stackContent = string.Join(" - ", stacks[i].Reverse());
+        Console.ForegroundColor = IsStackSolved(stacks[i], stackHeight) || stacks[i].Count == 0 ? ConsoleColor.Green : ConsoleColor.Red;
         Console.WriteLine($"Stack {stackInx} : {stackContent}");
     }
     Console.WriteLine("----------------------------------------");
     Console.WriteLine();
 }
 
-bool SolvePuzzle(List<Stack<BallColor>> stacks, int stackHeight, int colorCount)
+bool SolvePuzzle(List<Stack<BallColor>> stacks, int stackHeight, int colorCount, HashSet<string> visited)
 {
+    visited.Add(ConvertToStringJson(stacks));
+
     for (int i = 0; i < stacks.Count; i++)
     {
         var sourceStack = stacks[i];
-        if (IsStackSolved(sourceStack, stackHeight))
-        {
-            continue;
-        }
         for (int j = 0; j < stacks.Count; j++)
         {
             if (i == j)
@@ -58,13 +62,18 @@ bool SolvePuzzle(List<Stack<BallColor>> stacks, int stackHeight, int colorCount)
             {
                 MoveBall(sourceStack, destinationStack);
                 PrintStacks(stacks, stackHeight, colorCount);
+
                 if (IsLevelPassed(stacks, stackHeight, colorCount))
                 {
                     return true;
                 }
-                else
+
+                if( !visited.Contains(ConvertToStringJson(stacks)))
                 {
-                    SolvePuzzle(stacks, stackHeight, colorCount);
+                    if (SolvePuzzle(stacks, stackHeight, colorCount, visited))
+                    {
+                        return true;
+                    }
                 }
             }
         }
@@ -74,13 +83,16 @@ bool SolvePuzzle(List<Stack<BallColor>> stacks, int stackHeight, int colorCount)
 }
 
 int stackHeight = 4;
-int colorCount = 1;
+int colorCount = 3;
 
 List<Stack<BallColor>> ballStacks = new()
 {
-        new Stack<BallColor>( new[]{BallColor.Blue, BallColor.Blue} ),
-        new Stack<BallColor>( new[]{BallColor.Blue, BallColor.Blue } ),
+        new( new[]{BallColor.Yellow, BallColor.Blue, BallColor.Red, BallColor.Blue } ),
+        new( new[]{BallColor.Blue, BallColor.Yellow, BallColor.Red, BallColor.Red } ),
+        new( new[]{BallColor.Red, BallColor.Blue, BallColor.Yellow, BallColor.Yellow } ),
+        new(),
+        new(),
 };
 
 PrintStacks(ballStacks, stackHeight, colorCount);
-SolvePuzzle(ballStacks, stackHeight, colorCount);
+SolvePuzzle(ballStacks, stackHeight, colorCount, new());
